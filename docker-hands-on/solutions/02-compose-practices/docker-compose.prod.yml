@@ -1,0 +1,15 @@
+# 本番相当の設定。docker-compose.override.ymlは自動合成されないため、
+# `docker compose -f docker-compose.yml -f docker-compose.prod.yml ...` のように明示的に指定する。
+services:
+  web:
+    restart: unless-stopped
+    environment:
+      FLASK_DEBUG: "0"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  redis:
+    restart: unless-stopped

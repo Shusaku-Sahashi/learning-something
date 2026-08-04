@@ -1,0 +1,8 @@
+# docker compose up 実行時にdocker-compose.ymlと自動で合成される開発用の上書き設定。
+# ソースをbind mountして即時反映、コンテナ内はFLASK_DEBUGを有効にする。
+services:
+  web:
+    volumes:
+      - ../app:/app
+    environment:
+      FLASK_DEBUG: "1"
