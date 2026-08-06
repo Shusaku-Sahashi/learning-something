@@ -4,7 +4,7 @@ Kotlin + Ktor でサーバーサイド開発をしている人向けに、Gradle
 
 ## 前提
 
-- JDK 17 以上(各プロジェクトの Gradle Wrapper が Gradle 8.10 を自動ダウンロードします)
+- JDK 17〜26(各プロジェクトの Gradle Wrapper が Gradle 9.6.1 を自動ダウンロードします。Gradle 9 系の実行には JVM 17 以上が必要です)
 - インターネット接続(Maven Central からの依存解決、Gradle Wrapper のダウンロードに必要)
 - 各ステップは**独立した Gradle プロジェクト**です。それぞれのディレクトリに `cd` してから `./gradlew ...` を実行してください。
 

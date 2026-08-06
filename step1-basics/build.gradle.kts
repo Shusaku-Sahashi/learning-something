@@ -10,7 +10,7 @@ println("[Configuration] project.name = ${project.name}, project.path = ${projec
 plugins {
     // Kotlin DSL の `plugins {}` ブロックは特殊で、ここで書ける内容は限定されています
     // (プラグインの適用だけを宣言する専用のブロック = 型安全にバージョン解決するため)
-    kotlin("jvm") version "2.0.21"
+    kotlin("jvm") version "2.3.21"
 }
 
 println(

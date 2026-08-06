@@ -1,8 +1,12 @@
 plugins {
-    kotlin("jvm") version "2.0.21"
+    kotlin("jvm") version "2.3.21"
     // io.ktor.plugin は「application プラグイン」の上に乗っかっていて、
     // 加えて fat jar 作成タスク(buildFatJar)や Docker 関連タスクを追加してくれる。
-    id("io.ktor.plugin") version "3.0.3"
+    //
+    // 執筆時点の最新は 3.5.2 だが、このハンズオンでは意図的に少し前の 3.4.3 を使う。
+    // 理由は課題3で「プラグインより古いバージョン」と「プラグインより新しいバージョン」の
+    // 両方を実際に存在する公開バージョンで検証できるようにするため(詳しくは Step4 の README参照)。
+    id("io.ktor.plugin") version "3.4.3"
 }
 
 group = "com.example"
@@ -14,11 +18,11 @@ repositories {
 
 dependencies {
     // ポイント: io.ktor:* のライブラリにバージョンを書いていない。
-    // io.ktor.plugin を適用すると、プラグインのバージョン(3.0.3)に合わせて
+    // io.ktor.plugin を適用すると、プラグインのバージョン(3.4.3)に合わせて
     // 全 Ktor ライブラリのバージョンを揃えてくれる BOM 相当の仕組みが自動で効くため。
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-netty")
-    implementation("ch.qos.logback:logback-classic:1.5.12")
+    implementation("ch.qos.logback:logback-classic:1.6.1")
 
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation(kotlin("test"))

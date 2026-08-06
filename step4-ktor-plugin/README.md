@@ -37,17 +37,21 @@ curl localhost:8080/version
 
 ### 課題3: バージョン管理の仕組みを検証する
 
-1. `dependencies` ブロックの `implementation("io.ktor:ktor-server-core")` を、プラグインより**古い**バージョンを明示した形(`implementation("io.ktor:ktor-server-core:2.3.12")`)に書き換える。
+このプロジェクトが使っている `io.ktor.plugin` のバージョンは `3.4.3`(執筆時点の最新は `3.5.2` だが、後述の理由でわざと少し古いものを使っている)。
+
+1. `dependencies` ブロックの `implementation("io.ktor:ktor-server-core")` を、プラグインより**古い**バージョンを明示した形(`implementation("io.ktor:ktor-server-core:3.0.3")`)に書き換える。
 2. `./gradlew dependencies --configuration runtimeClasspath | grep ktor-server-core` を実行し、実際に使われるバージョンがどうなるか確認する。
-3. 今度はプラグインより**新しい**バージョンを明示した形(`implementation("io.ktor:ktor-server-core:3.2.0")`)に書き換えて同じコマンドを実行する。
+3. 今度はプラグインより**新しい**バージョンを明示した形(`implementation("io.ktor:ktor-server-core:3.5.2")`)に書き換えて同じコマンドを実行する。
 4. 2 と 3 で結果がどう違うか比較し、「BOM相当の仕組み」が具体的に何をしているか(`constraint` の役割)を考える。
 5. 検証が終わったら `implementation("io.ktor:ktor-server-core")`(バージョン指定なし)に戻す。
+
+(このハンズオンではプラグインを最新の `3.5.2` ではなく `3.4.3` にしているのは、「プラグインより古い/新しい」の両方を、実在する公開バージョンで再現するため。自分のプロジェクトでは基本的に最新の安定版プラグインを使ってよい。)
 
 ## 確認ポイント
 
 - `./gradlew tasks --all` に **Ktor tasks** と **Shadow tasks** の両方のグループが出てくること(= io.ktor.plugin が shadow を内部で使っている証拠)
 - `buildFatJar` で作った jar を `java -jar` で直接実行でき、`curl localhost:8080/` が通ること
-- 課題3で古いバージョンを指定した場合は `2.3.12 -> 3.0.3` のように**プラグインのバージョンに引き上げられる**こと
+- 課題3で古いバージョンを指定した場合は `3.0.3 -> 3.4.3` のように**プラグインのバージョンに引き上げられる**こと
 - 課題3で新しいバージョンを指定した場合は、そちらの**新しいバージョンがそのまま使われる**こと(強制ではなく制約であることの証明)
 
 ## つまずきやすいポイント・補足
@@ -61,4 +65,4 @@ curl localhost:8080/version
 
 1. `io.ktor.plugin` を1つ適用するだけで、追加でプラグインを書かなくても使えるようになるプラグインを2つ挙げてください。
 2. `io.ktor:ktor-server-core` にバージョンを書かなくてもビルドが通る理由を、Gradle の用語(constraint / platform)を使って説明してください。
-3. `implementation("io.ktor:ktor-server-core:2.3.12")` のように意図的に古いバージョンを指定した場合、最終的にどのバージョンが使われますか?またその理由は?
+3. `implementation("io.ktor:ktor-server-core:3.0.3")` のように意図的に古いバージョンを指定した場合、最終的にどのバージョンが使われますか?またその理由は?
