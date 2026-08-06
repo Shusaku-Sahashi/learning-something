@@ -19,10 +19,17 @@
 ## pnpm のインストール
 
 このコースでは [Corepack](https://nodejs.org/api/corepack.html) 経由での利用を推奨します。
-Node.js に同梱されており、プロジェクトごとに pnpm のバージョンを固定できるためです。
+プロジェクトごとに pnpm のバージョンを固定できるためです。
+
+> **注意**: Corepack は Node.js 16.9〜24 系には同梱されていますが、Node.js TSC の決定により
+> **Node.js 25 以降では Node.js 本体には同梱されなくなりました**（非推奨になったわけではなく、あくまで同梱をやめただけです）。
+> `node -v` が `v25` 以上の場合は、先に `npm install -g corepack` を実行してから下記のコマンドを使ってください。
 
 ```bash
-# Corepack を有効化（Node.js 16.9 以降に同梱）
+# (Node.js 25 以降のみ) Corepack自体を先にインストール
+npm install -g corepack
+
+# Corepack を有効化
 corepack enable
 
 # pnpm の最新版を使う場合
@@ -32,7 +39,7 @@ corepack use pnpm@latest
 pnpm --version
 ```
 
-npm でグローバルインストールする方法もあります（Corepack が使えない環境向け）。
+Corepack を使わず、npm で直接グローバルインストールする方法もあります。
 
 ```bash
 npm install -g pnpm
