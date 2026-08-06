@@ -53,8 +53,8 @@ node phantom-check.mjs
 `body-parser` が直下にコピーされているため import できてしまい、
 「`package.json` には書いていないのに動いてしまうコード」が生まれます。pnpm はこれを構造的に防ぎます。
 
-> もしどうしても npm/yarn 互換のフラットな `node_modules` にしたい場合は `.npmrc` に
-> `shamefully-hoist=true` を設定すれば可能ですが、pnpm の利点を打ち消してしまうため推奨されません（[Module 07](../07-dlx-npmrc-ci/README.md) で触れます）。
+> もしどうしても npm/yarn 互換のフラットな `node_modules` にしたい場合は `pnpm-workspace.yaml` に
+> `shamefullyHoist: true` を設定すれば可能ですが、pnpm の利点を打ち消してしまうため推奨されません（[Module 07](../07-dlx-npmrc-ci/README.md) で触れます）。
 
 ### 3. ストアの実体共有をハードリンクで確認する
 

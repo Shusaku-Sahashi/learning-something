@@ -56,7 +56,7 @@ npm install -g pnpm
 | 04 | [フィルタリングとスクリプト実行](./04-filtering-and-scripts/README.md) | `--filter`、`-r`（recursive）、`--parallel` |
 | 05 | [依存関係の管理](./05-dependency-management/README.md) | `overrides`、peer dependencies、`pnpm why` / `list` / `outdated` |
 | 06 | [パッチとカタログ](./06-patch-and-catalog/README.md) | `pnpm patch` による依存関係の直接修正、`catalog:` によるバージョン一元管理 |
-| 07 | [dlx・.npmrc・CI 活用](./07-dlx-npmrc-ci/README.md) | `pnpm dlx` / `exec`、`.npmrc` の主要設定、CI でのロックファイル運用 |
+| 07 | [dlx・.npmrc・CI 活用](./07-dlx-npmrc-ci/README.md) | `pnpm dlx` / `exec`、`pnpm-workspace.yaml`/`.npmrc` の設定の置き場所、CI でのロックファイル運用 |
 
 ## 進め方
 

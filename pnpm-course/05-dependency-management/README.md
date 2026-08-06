@@ -5,7 +5,7 @@
 - `pnpm why` で「なぜこのパッケージが入っているか」を調査できる
 - `pnpm list` / `pnpm outdated` で依存関係の現状を把握できる
 - peer dependencies の自動インストールの挙動を理解する
-- `pnpm.overrides` で間接依存のバージョンを強制的に上書きできる
+- `overrides`（`pnpm-workspace.yaml`）で間接依存のバージョンを強制的に上書きできる
 
 ## ハンズオン
 
@@ -66,7 +66,7 @@ pnpm add react-redux
 ```
 
 npm では「peer dependency が見つかりません」という警告が出るところですが、pnpm はデフォルト設定
-（`auto-install-peers=true`）により、解決可能な peer dependency を自動的にインストールします。
+（`autoInstallPeers: true`）により、解決可能な peer dependency を自動的にインストールします。
 
 ```bash
 pnpm why react
@@ -100,22 +100,20 @@ pnpm remove react-redux
 ### 6. overrides で間接依存のバージョンを固定する
 
 `qs` のバージョンを、express が要求するバージョンとは関係なく強制的に固定してみます。
-`package.json` に `pnpm.overrides` フィールドを追加してください。
 
-```json
-{
-  "dependencies": {
-    "express": "4.18.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "qs": "6.11.0"
-    }
-  }
-}
+> **バージョンによる注意**: pnpm v10 以前は `package.json` の `pnpm.overrides` フィールドに書く方式でしたが、
+> **pnpm v11 以降はこのフィールドは読まれなくなりました**。`package.json` に `pnpm` フィールドを書いても
+> `[WARN] The "pnpm" field in package.json is no longer read by pnpm` という警告が出るだけで無視されます。
+> 現在は `pnpm-workspace.yaml`（プロジェクト直下になければ新規作成します）に直接 `overrides` を書きます。
+
+`pnpm-workspace.yaml` を作成（または編集）してください。
+
+```yaml
+overrides:
+  qs: 6.11.0
 ```
 
-（もし手順4の時点ですでに `qs@6.11.0` だった場合は `"6.9.7"` など別バージョンで試してください。）
+（もし手順4の時点ですでに `qs@6.11.0` だった場合は `6.9.7` など別バージョンで試してください。）
 
 ```bash
 pnpm install
@@ -123,12 +121,12 @@ pnpm why qs
 ```
 
 `overrides` に書いたバージョンが優先されているのが確認できます。これは、依存先のパッケージ（今回は express）が
-指定しているバージョン範囲よりも、あなたのプロジェクトの `pnpm.overrides` が優先されるためです。
+指定しているバージョン範囲よりも、あなたのプロジェクトの `overrides` が優先されるためです。
 セキュリティ脆弱性が報告された間接依存を、パッチ版がリリースされるまでの応急処置として固定する、といった用途で使います。
 
 ## npm / yarn との違いに関する補足
 
-- npm でも `overrides` フィールド（`package.json` 直下）で同様のことができますが、pnpm では `pnpm.overrides` の中に書きます。
+- npm でも `overrides` フィールド（`package.json` 直下）で同様のことができますが、pnpm（v11 以降）では `pnpm-workspace.yaml` に直接書きます。
 - yarn (Berry) には `resolutions` という同様の機能があります。
 
 ## 確認ポイント
@@ -137,12 +135,12 @@ pnpm why qs
 - [ ] `pnpm outdated` の出力の見方が分かる
 - [ ] peer dependency がデフォルトで自動インストールされることを確認した
 - [ ] 自動インストールされた peer dependency も、直接 import はできない（strict node_modules の対象）ことを確認した
-- [ ] `pnpm.overrides` で間接依存のバージョンを固定できることを確認した
+- [ ] `pnpm-workspace.yaml` の `overrides` で間接依存のバージョンを固定できることを確認した
 
 ## 深掘り課題
 
-- `.npmrc` に `auto-install-peers=false` を設定すると、手順5はどう変わるか試してみましょう（peer dependency が自動解決されなくなり、警告が表示されるようになります）。
-- `pnpm.overrides` には `"express>qs": "6.11.0"` のように「どの依存経路の qs か」を指定する記法もあります。複数のパッケージが異なるバージョンの `qs` を要求している状況を作り、経路を指定した overrides を試してみましょう。
+- `pnpm-workspace.yaml` に `autoInstallPeers: false` を設定すると、手順5はどう変わるか試してみましょう（peer dependency が自動解決されなくなり、警告が表示されるようになります）。
+- `overrides` には `"express>qs": "6.11.0"` のように「どの依存経路の qs か」を指定する記法もあります。複数のパッケージが異なるバージョンの `qs` を要求している状況を作り、経路を指定した overrides を試してみましょう。
 
 ---
 
