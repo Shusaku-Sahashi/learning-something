@@ -11,7 +11,7 @@ import Control.Monad (replicateM)
 import Data.Bits (shiftL)
 import Data.Char (isDigit, isHexDigit, isSpace, chr, ord, digitToInt)
 import Data.Functor (($>))
-import Json.Gen
+import Json.Gen -- keep: also brings Json.Gen's `Arbitrary JValue` instance into scope for test/AppendixGenSpec.hs
 import Json.Value (JValue (..), isControl)
 import Test.QuickCheck hiding (Positive, Negative)
 

@@ -17,7 +17,7 @@ import Data.Functor (($>))
 import qualified Data.List.NonEmpty as NEL
 import Data.List (intercalate)
 import Data.List.Split (dropFinalBlank, keepDelimsR, onSublist, split)
-import Json.Gen
+import Json.Gen -- keep: used by this file's own prop_* tests below, and brings the `Arbitrary JValue` instance into scope
 import Json.Value (JValue (..), isControl)
 import Test.QuickCheck hiding (Negative, Positive)
 import Text.Printf (printf)

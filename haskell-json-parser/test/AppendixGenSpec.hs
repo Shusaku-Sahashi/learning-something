@@ -5,6 +5,11 @@
 --
 -- Part1 がまだ未実装なら、先に `cabal test part1` が通る状態にしてから
 -- 取り組んでください。
+--
+-- `shrink`/`Arbitrary JValue` は Json.Gen の instance を使う。ここでは
+-- import していないが、Exercise.Part1.Parser が `import Json.Gen` して
+-- いるおかげで transitively 使えている(その import を消すとこのテストは
+-- "No instance for (Arbitrary JValue)" で壊れる)。
 module Main (main) where
 
 import Control.Monad (unless)

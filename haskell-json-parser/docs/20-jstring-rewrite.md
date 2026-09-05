@@ -127,17 +127,20 @@ jSecondChar :: Char -> Parser String String
 ```
 ghci> import Exercise.Part2.Parser
 ghci> runParser jsonChar "a"
-Result ("",('a',1))
+("",('a',1))
 ghci> runParser jsonChar "\\b"
-Result ("",('\b',2))
+("",('\b',2))
 ghci> runParser jsonChar "\\u0040"
-Result ("",('@',6))
+("",('@',6))
 ghci> runParser jString "\"abc\""
-Result ("","abc")
+("","abc")
 ghci> runParser jString "\"\\uD834\\uDD1E\""
-Result ("","\119070")
+("","𝄞")
 ghci> runParser jString "\"\\uD834\""
-Error [...]
+Did not except '"', '\' or control characters, got '"' at line 1, column 8: \uD834"
+                                                                                  ↑
+→ Expected a second character of a surrogate pair at line 1, column 8: \uD834"
+                                                                             ↑
 ```
 
 ```bash

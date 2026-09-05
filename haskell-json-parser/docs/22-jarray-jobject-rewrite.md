@@ -100,13 +100,21 @@ jObject =
 ```
 ghci> import Exercise.Part2.Parser
 ghci> runParser jArray "[1,      \"hello\", \n3.5,  null, [false,true]]"
-Result ("",JArray [...])
+("",[1, "hello", 3.5, null, [false, true]])
 ghci> runParser jArray "[0,]"
-Error [...]
+Unexpected character: ']' at line 1, column 4: [0,]
+                                                  ↑
+→ Expected a JSON value at line 1, column 4: [0,]
+                                                ↑
 ghci> runParser jObject "{\"a\": 1}"
-Result ("",JObject [("a",JNumber 1 [] 0)])
+("",{"a": 1})
 ghci> runParser jObject "{\"a\":}"
-Error [...]
+Unexpected character: '}' at line 1, column 6: {"a":}
+                                                    ↑
+→ Expected an object value at line 1, column 6: {"a":}
+                                                     ↑
+→ Expected an object key-value pair at line 1, column 2: {"a":}
+                                                          ↑
 ```
 
 ```bash

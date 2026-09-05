@@ -3,9 +3,9 @@
 --
 -- 対応する解説は docs/appendix-quickcheck.md の「8. 腕試し」です。
 -- `cabal test appendix-gen` で、あなたがすでに実装した
--- Exercise.Part1.Parser (または Exercise.Part2.Parser) を使って
--- ラウンドトリップ検証します。Part1/Part2 のどちらかを先に完成させてから
--- 取り組んでください。
+-- Exercise.Part1.Parser を使ってラウンドトリップ検証します
+-- (test/AppendixGenSpec.hs が Part1 に固定で結び付けられているため)。
+-- Part1 を先に完成させてから取り組んでください。
 --
 -- 注意: このファイルでは `instance Arbitrary JValue` を再定義しません。
 -- Json.Gen がすでに定義しており、テスト実行時にはそちらが
@@ -56,8 +56,9 @@ jArrayGen :: Int -> Gen JValue
 jArrayGen = error "TODO: jArrayGen を実装する (scale, listOf, jValueGen を使う)"
 
 -- | 大きさの目安を受け取り、JObject を生成する。
+-- jArrayGen と同じく、再帰する側でサイズを縮めないと生成が終わらなくなるので注意。
 jObjectGen :: Int -> Gen JValue
-jObjectGen = error "TODO: jObjectGen を実装する"
+jObjectGen = error "TODO: jObjectGen を実装する (scale, listOf, jValueGen を使う)"
 
 -- | 大きさの目安を受け取り、任意の JValue を生成する。
 -- サイズが小さいほどスカラー値、大きいほど複合値に偏るようにする。

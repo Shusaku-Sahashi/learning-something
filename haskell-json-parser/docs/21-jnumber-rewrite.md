@@ -126,11 +126,16 @@ jNumber = do
 ```
 ghci> import Exercise.Part2.Parser
 ghci> runParser jNumber "01"
-Result ("1",JNumber 0 [] 0)
+("1",0)
 ghci> runParser jNumber "44.3e-7"
-Result ("",JNumber 44 [3] (-7))
+("",44.3e-7)
 ghci> runParser jNumber "-a"
-Error [...]
+Expected a digit, got 'a' at line 1, column 2: -a
+                                                ↑
+→ Expected an unsigned integer at line 1, column 2: -a
+                                                     ↑
+→ Expected a signed integer at line 1, column 1: -a
+                                                 ↑
 ```
 
 ```bash

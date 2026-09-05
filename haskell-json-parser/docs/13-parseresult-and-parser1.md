@@ -138,12 +138,16 @@ string1 (c : cs) = (:) <$> char1 c <*> string1 cs
 ```
 ghci> import Exercise.Part2.Parser
 ghci> runParser1 (string1 "abc") "abc"
-Result ("","abc")
+("","abc")
 ghci> runParser1 (string1 "abc") "abx"
-Error ["Expected 'c', got 'x'"]
+Expected 'c', got 'x'
 ghci> runParser1 (string1 "abc") ""
-Error ["Empty input"]
+Empty input
 ```
+
+(`Show (ParseResult a)` は `Result`/`Error` というコンストラクタ名を表示に含めません
+―― `show (Result res) = show res`、`show (Error errs) = ...` のように、中身だけを
+そのまま返す実装になっているためです。)
 
 ## 次へ
 

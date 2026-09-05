@@ -84,18 +84,19 @@ jBool :: Parser String JValue
 ```
 ghci> import Exercise.Part2.Parser
 ghci> runParser lookahead "abc"
-Result ("abc",'a')
+("abc",'a')
 ghci> runParser lookahead ""
-Error ["Empty input at line 1, column 1: \n                                 \8593"]
+Empty input at line 1, column 1:
+                                 ↑
 ghci> runParser (string "abh") "abhinav"
-Result ("inav","abh")
+("inav","abh")
 ghci> runParser (string "abc") "abhinav"
-Error ["Expected 'c', got 'h' at line 1, column 3: abhinav\n                                              \8593"]
+Expected 'c', got 'h' at line 1, column 3: abhinav
+                                             ↑
 ```
 
-(GHCi 上では `↑` がエスケープ表示 `\8593` に見えることがありますが、
-`putStrLn` 経由で表示すれば矢印としてそのまま表示されます。
-`printResult`(23 で実装)を使うと見やすくなります。)
+(`Show (ParseResult a)` は `Result`/`Error` というコンストラクタ名を表示に含めません
+―― 13 で見た通り、中身だけをそのまま返す実装だからです。)
 
 ```bash
 cabal test part2

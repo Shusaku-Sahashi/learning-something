@@ -10,14 +10,16 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        hsPkgs = pkgs.haskell.packages.ghc967;
+        # ghc96 tracks the latest 9.6.x release in this nixpkgs input, rather
+        # than pinning an exact point-release attribute that disappears the
+        # next time nixpkgs drops an older GHC minor version.
+        hsPkgs = pkgs.haskell.packages.ghc96;
       in
       {
         devShells.default = pkgs.mkShell {
           buildInputs = [
             hsPkgs.ghc
             pkgs.cabal-install
-            pkgs.zlib
           ];
 
           shellHook = ''
