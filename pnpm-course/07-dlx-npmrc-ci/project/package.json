@@ -1,0 +1,9 @@
+{
+  "name": "dlx-npmrc-ci-demo",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "dependencies": {
+    "dayjs": "^1.11.21"
+  }
+}

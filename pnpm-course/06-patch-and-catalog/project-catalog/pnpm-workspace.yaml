@@ -1,0 +1,11 @@
+packages:
+  - "packages/*"
+
+# デフォルトカタログ: catalog: と書くとここのバージョンが使われる
+catalog:
+  dayjs: ^1.11.21
+
+# 名前付きカタログ: catalog:<name> で参照する
+catalogs:
+  react17:
+    react: ^17.0.2

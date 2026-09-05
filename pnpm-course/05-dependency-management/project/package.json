@@ -1,0 +1,9 @@
+{
+  "name": "dependency-management-demo",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "4.18.0"
+  }
+}
