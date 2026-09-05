@@ -1,0 +1,48 @@
+# ============================================================
+# これは「答え」の参考例です。このファイル自体は Gradle からは読まれません
+# (Gradle が自動認識するのは gradle/libs.versions.toml だけ)。
+#
+# 課題2をやってみてから、答え合わせのために見てください。
+# ============================================================
+
+[versions]
+kotlin = "2.3.21"
+guava = "33.6.0-jre"
+jetbrains-annotations = "26.1.0"
+slf4j = "2.0.18"
+
+[libraries]
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+# --- 適用後の build.gradle.kts はこう変わる -------------------------------
+#
+# core/build.gradle.kts:
+#   plugins {
+#       alias(libs.plugins.kotlin.jvm)
+#   }
+#   dependencies {
+#       api(libs.guava)
+#       compileOnly(libs.jetbrains.annotations)
+#   }
+#
+# consumer/build.gradle.kts:
+#   plugins {
+#       alias(libs.plugins.kotlin.jvm)
+#       application
+#   }
+#   dependencies {
+#       implementation(project(":core"))
+#       implementation(libs.slf4j.api)
+#       runtimeOnly(libs.slf4j.simple)
+#   }
+#
+# ポイント:
+# - バージョン番号がハードコードされた文字列から「型安全なプロパティアクセス(libs.xxx)」に変わる
+# - kotlin プラグインのバージョンも catalog 側で一元管理できる(alias(libs.plugins.xxx))
+# - 複数モジュールで同じライブラリの同じバージョンを使うことが、ファイルを1つ見るだけで保証される
