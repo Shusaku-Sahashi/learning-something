@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION=3.12
+
+FROM python:${PYTHON_VERSION}-slim AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --target=/app/deps -r requirements.txt
+
+# distrolessにはシェルもパッケージマネージャもgroupadd/useraddも存在しないため、
+# :nonroot タグ(あらかじめuid=65532の非rootユーザーで動くよう作られている)を使う。
+FROM gcr.io/distroless/python3-debian12:nonroot AS runtime
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION} \
+    REDIS_HOST=redis \
+    REDIS_PORT=6379 \
+    PYTHONPATH=/app/deps \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+COPY --from=builder /app/deps /app/deps
+COPY app.py .
+
+# distrolessにはシェルが無くRUN命令でchownできないため、コピー元のオーナーシップを
+# --chownで直接指定する(distrolessの:nonrootは既定でuid/gid 65532)。
+# 上のCOPYを以下のように書き換えると明示的になる:
+# COPY --from=builder --chown=nonroot:nonroot /app/deps /app/deps
+# COPY --chown=nonroot:nonroot app.py .
+
+EXPOSE 8000
+ENTRYPOINT ["python3", "app.py"]
+
+# 注意: distrolessにはcurl/shellが無いため、通常のHEALTHCHECK(CMDにシェルコマンドを
+# 書く形)はそのままでは使えない。運用上はDocker/Kubernetes側のliveness/readinessプローブを
+# TCPソケットチェックにするか、デバッグ時だけ `:debug` タグ(busybox入り)のイメージで
+# 一時的に調査する、という運用になる。
