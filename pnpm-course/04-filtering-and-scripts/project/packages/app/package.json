@@ -1,0 +1,11 @@
+{
+  "name": "@sample/app",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo '[app] building...' && sleep 0.5 && echo '[app] done'"
+  },
+  "dependencies": {
+    "@sample/ui": "workspace:*",
+    "@sample/core": "workspace:*"
+  }
+}

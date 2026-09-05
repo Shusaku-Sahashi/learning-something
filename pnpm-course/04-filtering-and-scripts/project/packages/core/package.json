@@ -1,0 +1,7 @@
+{
+  "name": "@sample/core",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo '[core] building...' && sleep 0.5 && echo '[core] done'"
+  }
+}
