@@ -1,0 +1,106 @@
+cabal-version:      3.0
+name:               haskell-json-parser
+version:            0.1.0.0
+build-type:         Simple
+
+common warnings
+    ghc-options: -Wall -Wno-unused-do-bind
+
+-- 学習者が実装する本体 + サンプルデータ型・ジェネレータをまとめたライブラリ。
+-- Exercise.Part1.Parser / Exercise.Part2.Parser の中身を学習者が埋めていく。
+library
+    import:           warnings
+    exposed-modules:  Json.Value
+                      Json.Gen
+                      Exercise.Part1.Parser
+                      Exercise.Part2.Parser
+                      Exercise.Appendix.Gen
+    hs-source-dirs:   src
+    build-depends:    base
+                    , QuickCheck
+                    , split
+    default-extensions: LambdaCase
+                      , TupleSections
+                      , MultiWayIf
+                      , DeriveGeneric
+    default-language: Haskell2010
+
+-- 模範解答。各ファイルはブログ記事末尾のサンプルコードそのままの、
+-- 自己完結した1ファイルモジュールになっている。
+library solutions
+    import:           warnings
+    exposed-modules:  Solutions.Part1
+                      Solutions.Part2
+    hs-source-dirs:   solutions
+    build-depends:    base
+                    , QuickCheck
+                    , split
+    default-extensions: LambdaCase
+                      , TupleSections
+                      , MultiWayIf
+                      , DeriveGeneric
+    default-language: Haskell2010
+
+-- `cabal test part1` : 自分の Exercise.Part1.Parser 実装を
+-- QuickCheck のプロパティテストで検証する。
+test-suite part1
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          Part1Spec.hs
+    hs-source-dirs:   test
+    build-depends:    base
+                    , haskell-json-parser
+                    , QuickCheck
+    default-extensions: LambdaCase
+    default-language: Haskell2010
+
+-- `cabal test part2` : 自分の Exercise.Part2.Parser 実装を検証する。
+test-suite part2
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          Part2Spec.hs
+    hs-source-dirs:   test
+    build-depends:    base
+                    , haskell-json-parser
+                    , QuickCheck
+    default-extensions: LambdaCase
+    default-language: Haskell2010
+
+-- `cabal test appendix-gen` (任意) : docs/appendix-quickcheck.md の腕試しで
+-- 自分が実装した Exercise.Appendix.Gen を、自分が実装した
+-- Exercise.Part1.Parser でラウンドトリップ検証する。
+test-suite appendix-gen
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          AppendixGenSpec.hs
+    hs-source-dirs:   test
+    build-depends:    base
+                    , haskell-json-parser
+                    , QuickCheck
+    default-extensions: LambdaCase
+    default-language: Haskell2010
+
+-- `cabal test solutions-part1` / `solutions-part2` :
+-- 模範解答が正しくテストを通ることを確認するための参考用テスト。
+-- 「自分の実装が動かないのは環境のせいでは?」という不安を切り分けたいときに使う。
+test-suite solutions-part1
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          SolutionsPart1Spec.hs
+    hs-source-dirs:   test
+    build-depends:    base
+                    , solutions
+                    , QuickCheck
+    default-extensions: LambdaCase
+    default-language: Haskell2010
+
+test-suite solutions-part2
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          SolutionsPart2Spec.hs
+    hs-source-dirs:   test
+    build-depends:    base
+                    , solutions
+                    , QuickCheck
+    default-extensions: LambdaCase
+    default-language: Haskell2010
