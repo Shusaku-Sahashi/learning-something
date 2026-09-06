@@ -46,6 +46,60 @@ fmap :: (a -> b) -> (i, a) -> (i, b)
 fmap f (i, x) = (i, f x)
 ```
 
+<details>
+<summary>なぜ2番目の要素にしか作用しないのか(1番目にも適用したい場合は?)</summary>
+
+`Functor` の定義を思い出してください。
+
+```haskell
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+```
+
+`f` は「型引数を1つ受け取れば具体的な型になる」というカインド(`Type -> Type`)を
+持つ必要があります。タプルの型構築子 `(,)` は `Type -> Type -> Type` という
+2引数のカインドなので、`Functor` のインスタンスにするには**どちらか一方の
+型引数を固定して `Type -> Type` にする**必要があります。
+
+```haskell
+(,) i        -- i を固定 → 残り(2番目)が可変 → Functor にできる
+```
+
+Haskellの型適用は左から右に部分適用する形しかできないので、「2番目を固定して
+1番目を可変にする」という書き方は言語機能として存在しません。だから普通の
+`Functor` は**タプルの最後の型引数にしか作用できない**という制約があります
+(3要素タプルなら3番目、4要素タプルなら4番目、というように「最後の要素」が
+対象になります)。
+
+1番目の要素(や、両方を別々の関数で)変換したい場合は、`Functor` ではなく
+`Data.Bifunctor` を使います。
+
+```haskell
+class Bifunctor p where
+  bimap  :: (a -> b) -> (c -> d) -> p a c -> p b d
+  first  :: (a -> b) -> p a c -> p b c   -- 1番目だけ
+  second :: (b -> c) -> p a b -> p a c   -- 2番目だけ (fmap と同じ)
+```
+
+実際に動かして確認しました。
+
+```haskell
+ghci> import Data.Bifunctor (first, second, bimap)
+ghci> first (+1) (10, 5)
+(11,5)      -- 1番目の 10 だけに +1 が適用される
+ghci> second (+1) (10, 5)
+(10,6)      -- 2番目の 5 だけに +1 が適用される (fmap と全く同じ結果)
+ghci> bimap (+1) show (10, 5)
+(11,"5")    -- 1番目に (+1)、2番目に show を、それぞれ別の関数で適用
+```
+
+ちなみに `Either` もタプルと同様に `Bifunctor` のインスタンスがあり(`first` が
+`Left` 側、`second` が `Right` 側に作用)、`Functor` のインスタンスとしては
+`Right` 側にしか `fmap` できません。これも同じ「最後の型引数にしか作用できない」
+というルールの表れです。
+
+</details>
+
 つまり `digit1` でやっていた「`Maybe` の中の、タプルの2番目」という**2段階**の
 変換は、`fmap` を**2回重ねる**だけで書けます。
 
@@ -57,6 +111,75 @@ digit2 = Parser $ \i -> case runParser (satisfy isDigit) i of
 ```
 
 さらに `case` 式そのものも `Maybe` の `fmap` に置き換えられます。
+
+> [!NOTE]
+> <details>
+> <summary>digit2 の case 式が、なぜ丸ごと fmap に置き換えられるのか</summary>
+>
+> `Maybe` の `fmap` の定義をもう一度見てください。
+>
+> ```haskell
+> fmap :: (a -> b) -> Maybe a -> Maybe b
+> fmap g Nothing  = Nothing
+> fmap g (Just x) = Just (g x)
+> ```
+>
+> これは言い換えると、「`Nothing -> Nothing`、`Just x -> Just (g x)` という
+> `case` 式を書く代わりに `fmap g` と書ける」ということです。つまり
+>
+> ```haskell
+> case maybeValue of
+>   Nothing -> Nothing
+>   Just x  -> Just (g x)
+> ```
+>
+> という形の `case` 式を見かけたら、それは常に `fmap g maybeValue` **そのもの**
+> です(定義そのままなので、書き換えではなく単なる別表記)。
+>
+> これを `digit2` の `case` 式に当てはめてみます。
+>
+> ```haskell
+> case runParser (satisfy isDigit) i of
+>   Nothing      -> Nothing
+>   Just (i', o) -> Just . fmap digitToInt $ (i', o)
+> ```
+>
+> - `maybeValue` に当たる部分 ＝ `runParser (satisfy isDigit) i`
+> - `Just x -> Just (g x)` の `x` に当たる部分 ＝ `(i', o)` (パターンマッチで
+>   分解されていますが、`Just x` の `x` が `(i', o)` という2要素タプルだ、と
+>   読み替えるだけです)
+> - `g x` に当たる部分 ＝ `fmap digitToInt $ (i', o)`、つまり `g = fmap digitToInt`
+>   (タプルに対する `fmap`)
+>
+> これで「`maybeValue` は何か」「`g` は何か」の2つが分かったので、そのまま
+> `fmap g maybeValue` の形に書き直せます。
+>
+> ```haskell
+> fmap (fmap digitToInt) (runParser (satisfy isDigit) i)
+> ```
+>
+> 外側の `fmap`(第1引数)が `Maybe` に対する `fmap`、その第1引数として渡している
+> `fmap digitToInt` がタプルに対する `fmap` です。`case` 式が消えて、代わりに
+> `fmap` が2重に(入れ子で)使われている点に注目してください。
+>
+> 最後に、`\i -> fmap (fmap digitToInt) (runParser (satisfy isDigit) i)` を
+> `.`(関数合成)を使った書き方に直すと `digit3` の右辺になります(`$` は
+> 「関数適用」を表す記号で、優先順位を下げて括弧を減らすためだけに使われています)。
+>
+> 実際に `digit2` と `digit3` を動かして、同じ結果になることを確認しました。
+>
+> ```haskell
+> ghci> runParser digit2 "123"
+> Just ("23",1)
+> ghci> runParser digit3 "123"
+> Just ("23",1)
+> ghci> runParser digit2 "abc"
+> Nothing
+> ghci> runParser digit3 "abc"
+> Nothing
+> ```
+>
+> </details>
 
 ```haskell
 digit3 :: Parser String Int

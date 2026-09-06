@@ -56,6 +56,58 @@ pure x = Parser $ pure . (, x)
   型が違えば同じ名前でも別の実装が呼ばれます(`Maybe` の `pure` と `Parser` の
   `pure` は別物です)。
 
+> [!NOTE]
+> <details>
+> <summary>右辺の <code>pure</code> がなぜ <code>Maybe</code> だとわかるのか(型推論の仕組み)</summary>
+>
+> `pure`は`Applicative`という型クラスのメソッドなので、単独では`Maybe`のものか
+> 別の型のものか決まりません。実際に確認すると、式単独では型が確定していない
+> ことが分かります。
+>
+> ```haskell
+> ghci> :type pure . (, 'x')
+> pure . (, 'x') :: Applicative f => a -> f (a, Char)
+> ```
+>
+> `Applicative f =>`という**制約(まだ解決されていない型変数 `f`)**が残ったまま
+> です。`Maybe`かもしれないし、`[]`かもしれないし、`IO`かもしれません。
+>
+> ところが `Parser $ ...` で包むと、この制約が消えて完全に具体的な型になります。
+>
+> ```haskell
+> ghci> :type \x -> Parser $ pure . (, x)
+> \x -> Parser $ pure . (, x) :: o -> Parser i o
+> ```
+>
+> これは「`Parser`の定義そのものにヒントがある」からです。
+>
+> ```haskell
+> newtype Parser i o = Parser { runParser :: i -> Maybe (i, o) }
+> ```
+>
+> `Parser`という構築子(関数)の型は`Parser :: (i -> Maybe (i, o)) -> Parser i o`
+> です。つまり`Parser $ 何か`と書いた瞬間、その「何か」は**必ず`i -> Maybe (i, o)`
+> という型でなければならない**、とGHCは知っています(`Parser`の定義に`Maybe`
+> という**具体的な型**が直接書かれているからです)。
+>
+> 型推論はここで「外側から内側へ」働きます。
+>
+> 1. `Parser $ (pure . (, x))` 全体の型は `i -> Maybe (i, o)` でなければならない
+>    (`Parser` の定義より)
+> 2. `pure . (, x) :: i -> f (i, x)`(`(, x)` の型と合成の型から)
+> 3. 1と2を見比べると、`f (i, x)` は `Maybe (i, o)` と一致しなければならない
+> 4. `f = Maybe`、`x = o` という組み合わせしかこれを満たせない →
+>    **`f` は `Maybe` だと確定する**
+>
+> つまり「`pure`がどの型のものか」を先に決めてから式を書いているのではなく、
+> **周りの文脈(ここでは`Parser`の中身が`Maybe`だと定義されていること)から
+> 逆算して、GHCが後から`Maybe`だと確定させている**、という順番です。もし
+> `Parser`の定義が`Maybe`の代わりに`Either String`のような別の型を使っていたら、
+> この`pure`は自動的に`Either String`の`pure`(`\x -> Right x`)に解決されて
+> いたはずです。
+>
+> </details>
+
 `pure . (, x)` は関数合成なので、`\i -> pure ((, x) i)` すなわち
 `\i -> pure (i, x)` すなわち `\i -> Just (i, x)` と同じ意味になります。
 
@@ -84,6 +136,67 @@ string2 s = case s of
 
 この `string2` はすでに `src/Exercise/Part1/Parser.hs` に実装済みです(参考として
 読んでください)。ここでの本題は `instance Applicative (Parser i)` を実装することです。
+
+> [!NOTE]
+> <details>
+> <summary><code>Just (rest, c') -> fmap (c' :) &lt;$&gt; runParser (string2 cs) rest</code> の <code>(c' :)</code> がなぜ必要か</summary>
+>
+> `(c' :)` は `(== c)` のときと同じ**セクション(部分適用)**です。ただし `:`
+> は非対称な演算子なので、`(== c)` と違って**左右で意味が変わります**。
+>
+> `:`(cons演算子)の型は `(:) :: a -> [a] -> [a]`(先頭に要素を追加してリストを
+> 作る)です。
+>
+> ```haskell
+> 'a' : "bc"   -- "abc" (先頭に 'a' を追加)
+> ```
+>
+> `(c' :)` は**左側の `c'` だけを固定した**セクションなので、
+>
+> ```haskell
+> (c' :) = \xs -> c' : xs
+> ```
+>
+> つまり「**渡されたリスト(文字列)の先頭に `c'` をくっつける関数**」になります。
+> 実際に確認しました。
+>
+> ```haskell
+> ghci> ('a' :) "bc"
+> "abc"
+> ghci> (:) 'a' "bc"
+> "abc"
+> ```
+>
+> ### `string2` の中でなぜこれが必要か
+>
+> `string2 (c:cs)` は、「`c` を1文字パースして、残りの `cs` を再帰的にパースする」
+> という処理でした。
+>
+> 1. `char c` で1文字読む → `c'`(実際には `c` と同じ文字)が取れる
+> 2. `string2 cs` で残りの部分文字列をパース → 結果として `String`(例: `"bc"`)
+>    が取れる
+> 3. でも欲しいのは `"bc"` ではなく、**`c'` を先頭にくっつけた `"abc"`**
+>    (全体で一致した文字列)
+>
+> この「先頭にくっつける」処理が `(c' :)` です。それを `fmap (c' :)` で(`Maybe`
+> の中の)**タプルの2番目の要素**(パース結果の文字列)にだけ適用し、さらに
+> 外側の `<$>` で `Maybe` の中に届かせています(これは `fmap (fmap f)` と全く
+> 同じパターンで、`fmap g <$> x` は `fmap (fmap g) x` と書いても同じです)。
+>
+> 実際に動かして確認しました。
+>
+> ```haskell
+> ghci> runParser (string2 "abc") "abcdef"
+> Just ("def","abc")
+> ghci> runParser (string2 "abc") "xyz"
+> Nothing
+> ```
+>
+> `"abcdef"` から `"abc"` という3文字が正しく1つの文字列として組み立てられて
+> いるのが分かります。もし `(c' :)` が無かったら、`c'`(1文字目)と `string2 cs`
+> の結果(残りの文字列)がバラバラのまま、正しく1つの文字列に組み立てられません。
+>
+> </details>
 
 ```haskell
 instance Applicative (Parser i) where

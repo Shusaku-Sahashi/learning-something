@@ -82,6 +82,22 @@ GHCi を起動し、モジュールを import して試せます。
 cabal repl lib:haskell-json-parser
 ```
 
+`lib:haskell-json-parser` は cabal の**ターゲット指定**です。`<種類>:<名前>`
+という形式で、1つの `.cabal` パッケージの中にある複数のコンポーネント
+(`library`, `test-suite`, `executable` など)のうちどれを対象にするかを
+指定します(`cabal test part1` の `part1` も実は `test:part1` の省略形です)。
+
+`haskell-json-parser.cabal` にはライブラリが2つ定義されています。
+
+- `library`(名前を省略しているのでパッケージ名と同じ `haskell-json-parser`
+  という名前になる)―― これが学習者が実装するほう。`lib:haskell-json-parser`
+  で指定します。
+- `library solutions` ―― 模範解答のほう。`lib:solutions` で指定します。
+
+`cabal repl` とだけ打つとどちらを開くか曖昧になるため、`lib:haskell-json-parser`
+と明示して「模範解答ではなく自分が実装しているほうを開く」ようにしています。
+模範解答側を GHCi で触りたいときは `cabal repl lib:solutions` としてください。
+
 ```
 ghci> import Exercise.Part1.Parser
 ghci> runParser (char 'a') "abc"

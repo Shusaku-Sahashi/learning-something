@@ -149,7 +149,10 @@ instance Arbitrary JValue where
 `deriving (..., Generic)` を思い出してください)を使って、
 「コンストラクタの引数を1つずつ、より単純な値に置き換えてみる」という
 縮小処理を自動的に導出してくれる QuickCheck の関数です。自分でゼロから
-`shrink` を書く必要がなくなります。
+`shrink` を書く必要がなくなります。`Generic`/`genericShrink` の仕組み
+そのものをもっと詳しく知りたい場合は
+[Appendix. GHC.Generics と `deriving (Generic)` 入門](appendix-generics.md)
+を参照してください。
 
 ## 4. Property: 性質の書き方
 
