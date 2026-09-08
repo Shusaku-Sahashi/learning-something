@@ -151,6 +151,7 @@ ghci> runParser jNull "null"
 | 24 | [conclusion](docs/24-conclusion.md) | 振り返りと発展課題 |
 | Appendix | [QuickCheck 入門](docs/appendix-quickcheck.md) | `Gen`/`Arbitrary`/`shrink` の詳細、自分でPBTを書く練習 |
 | Appendix | [GHC.Generics 入門](docs/appendix-generics.md) | `deriving (Generic)` の仕組み、`genericShrink` が動く理由 |
+| Appendix | [GHCi デバッグ入門](docs/appendix-ghci-debugging.md) | `:type`/`::`/`:info`/`:browse`/`:kind` の使い分け |
 
 ## 参考資料
 

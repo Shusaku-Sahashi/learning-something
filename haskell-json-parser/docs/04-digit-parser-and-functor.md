@@ -211,6 +211,81 @@ instance Functor (Parser i) where
 `Maybe (i, o)` の中身(タプルの2番目の要素)に `f` を適用したいわけです。
 `digit3` で使ったのと同じ「`fmap` を2回重ねる」パターンがそのまま使えます。
 
+> [!NOTE]
+> <details>
+> <summary><code>fmap (fmap f)</code> のように fmap を2回重ねたとき、外側・内側がそれぞれ何の Functor になるかを型で追う方法</summary>
+>
+> `fmap (fmap digitToInt) . runParser (satisfy isDigit)` のように `fmap` が
+> 2重になっていると、「外側の `fmap` と内側の `fmap` は、それぞれ何の
+> `Functor` インスタンスなのか」が頭の中だけでは追いにくくなります。ここは
+> 覚えるのではなく、**型を1つずつ機械的に unify(一致させる)していく**
+> 作業として捉えると迷いません。
+>
+> `fmap` の一般形を思い出してください。
+>
+> ```haskell
+> fmap :: (x -> y) -> g x -> g y
+> ```
+>
+> `fmap (fmap digitToInt)` は、この `x -> y` の部分に `fmap digitToInt` を
+> 渡した形です。`fmap digitToInt` 自体も「何らかの `Functor` 一つ分」の
+> `fmap` なので、その functor を仮に「内側」と呼ぶと、`fmap digitToInt ::
+> (内側) Char -> (内側) Int` という形をしています。これを外側の `fmap` に
+> 渡すと、
+>
+> ```haskell
+> fmap (fmap digitToInt) :: (外側) ((内側) Char) -> (外側) ((内側) Int)
+> ```
+>
+> という形になります。この時点では「外側」も「内側」もまだ何の
+> `Functor` か決まっていません。実際に GHCi で確認すると、そのことが
+> そのまま型に表れます。
+>
+> ```haskell
+> ghci> :type fmap (fmap digitToInt)
+> fmap (fmap digitToInt)
+>   :: (Functor f1, Functor f2) => f1 (f2 Char) -> f1 (f2 Int)
+> ```
+>
+> `(Functor f1, Functor f2) =>` という制約が残ったままなのは、まさに
+> 「まだ確定していない」ということです。ここに `runParser (satisfy isDigit)`
+> という**具体的な型を持つ関数**を合成すると、初めて確定します。
+>
+> ```haskell
+> ghci> :type runParser (satisfy isDigit)
+> runParser (satisfy isDigit) :: String -> Maybe (String, Char)
+> ghci> :type fmap (fmap digitToInt) . runParser (satisfy isDigit)
+> fmap (fmap digitToInt) . runParser (satisfy isDigit)
+>   :: String -> Maybe (String, Int)
+> ```
+>
+> `f1 (f2 Char)` と `Maybe (String, Char)` が一致しなければならないので、
+>
+> - `f1 = Maybe` (外側)
+> - `f2 Char = (String, Char)` → `f2` は「`Char` を渡すと `(String, Char)`
+>   になるもの」なので `f2 = (,) String`(＝ `String` を1番目に固定した
+>   タプル、内側)
+>
+> と、機械的に確定します。まとめると:
+>
+> | | 何のFunctorか |
+> |---|---|
+> | 外側の `fmap`(`fmap (fmap digitToInt)` 全体) | `Maybe` |
+> | 内側の `fmap`(`fmap digitToInt` 単体) | タプル(`(,) String`) |
+>
+> ちなみに `(,) String` は「`String` を1番目に固定したタプル型コンストラクタ」
+> を表す書き方です。値の世界で `(, x)` と書けたタプルセクション
+> (`TupleSections` 拡張)とは別物で、型の世界では単に型コンストラクタに
+> 引数を1つだけ部分適用しているだけです(`:kind (,) String` は
+> `* -> *` になり、`Functor` のインスタンスになれる形をしています)。
+>
+> **ここで一番大事なのは、この対応関係を暗記することではなく、迷ったら
+> `:type` で1つずつ確認すればいい、ということです。** `fmap` を重ねる書き方は
+> 慣れないうちは本当に読みにくいので、頭の中だけで解決しようとせず、
+> GHCiに聞く癖をつけてください。
+>
+> </details>
+
 `src/Exercise/Part1/Parser.hs` の `instance Functor (Parser i)` を実装してください。
 型注釈は付いていませんが、`fmap :: (a -> b) -> Parser i a -> Parser i b` です。
 
@@ -244,6 +319,31 @@ class Functor f where
 `f` の部分に `Maybe`、`[]`、`Parser i` などが入ります。今回 `Parser i` に対して
 自分でこの `fmap` を実装したことで、「中身がどんな型でも、`f <$> parser` と書けば
 パース結果を変換できる」という道具を手に入れたことになります。
+
+> [!NOTE]
+> `digit3` の `fmap (fmap digitToInt)` のように、`fmap` を手で2回重ねて
+> 「`Maybe` の中の、タプルの2番目」に処理を届かせるのは、正直かなり泥臭い
+> 作業です。ですが、これは**この章だけ**の話です。
+>
+> `Applicative`(`<*>`)や `Monad`(`>>=`)、`do` 構文は、まさにこの「`fmap` を
+> 手で重ねる面倒さ」を隠すために存在する道具です。
+>
+> - `05` 章で `<*>` を実装すれば、以降は `(:) <$> char c <*> string cs` の
+>   ように書けて、`Maybe` もタプルも一切意識しなくて済むようになります。
+> - `07` 章で `Monad`(`>>=`)を実装すれば、`do` 構文で「順番に処理を繋げる」
+>   だけで済み、`case` 分岐すら書かなくて済むようになります。
+>
+> つまり構造としては:
+>
+> - **`04` 章(今ここ)**: 道具(`Functor`/`Applicative`/`Monad`)が**何もない
+>   状態**で、生の `fmap` と `case` 式だけで頑張って実装する ―― 一番泥臭くて
+>   難しいところです。
+> - **`05` 章以降**: 自分で作った道具を**使う側**に回るので、むしろ書く量も
+>   考える量も減っていきます。
+>
+> 「最初に習う概念(`Functor`)が一番難しい」わけではなく、「その概念を支える
+> 道具が何もない、一番最初の章だけ」特別にしんどい、ということです。ここを
+> 乗り越えれば、この先は楽になっていきます。
 
 ## 動作確認
 
