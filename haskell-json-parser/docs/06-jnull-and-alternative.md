@@ -66,6 +66,48 @@ class Applicative f => Alternative f where
 この性質のことを**バックトラッキング**と呼びます。 ―― `p1` を試して失敗したら、
 入力を最初の位置に戻して `p2` を試す、という動きになるからです。
 
+> [!NOTE]
+> **`Parser` の `Alternative` インスタンスは、なぜ `Applicative` の性質を
+> 使っていないように見えるのか**
+>
+> これから実装する `empty`/`<|>` を見ると、`<*>` も `pure` も一切登場しません。
+>
+> ```haskell
+> instance Alternative (Parser i) where
+>   empty = Parser $ const empty
+>   p1 <|> p2 = Parser $ \input -> runParser p1 input <|> runParser p2 input
+> ```
+>
+> `Maybe` 自身の `Alternative`(`Nothing`/`Just`)にただ乗っかっているだけで、
+> `Applicative` の性質はどこにも使われていないように見えます。
+>
+> しかし `Alternative` には `empty`/`<|>` 以外に `some`/`many` という
+> メソッドもあり、こちらは最初から**デフォルト実装**が用意されています
+> (`{-# MINIMAL empty, (<|>) #-}` の通り、自分で書く必要があるのは
+> `empty`/`<|>` だけです)。
+>
+> ```haskell
+> some v = (:) <$> v <*> many v
+> many v = some v <|> pure []
+> ```
+>
+> 「`v` を1回パースして、残りは `many v`(0回以上の繰り返し)に任せる」という
+> 再帰を、`<*>`(順番に実行して結果を組み合わせる)で組み立てています。
+> `docs/09` で実際に使う `spaces`/`separatedBy` は、この `many` を使って
+> 定義します。
+>
+> ```haskell
+> separatedBy v s = (:) <$> v <*> many (s *> v)
+> spaces = many (char ' ' <|> char '\n' <|> char '\r' <|> char '\t')
+> ```
+>
+> つまり `class Applicative f => Alternative f` という制約は、「`empty`/`<|>`
+> の実装に `<*>` が必要だから」ではなく、「`Alternative` が提供する `some`/
+> `many` というメソッドが `Applicative` を必要とするから」です。`Parser`
+> 側で `empty`/`<|>` しか書かないので見落としやすいですが、`Alternative`
+> というインターフェース全体で見ると、ちゃんと `Applicative` の性質を
+> 使っています。
+
 `src/Exercise/Part1/Parser.hs` の `instance Alternative (Parser i)` を
 実装してください。
 

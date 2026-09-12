@@ -216,6 +216,75 @@ instance Applicative (Parser i) where
 書き始めるとよいでしょう。`Functor` のときと同様、「`Maybe` の中の、タプルの
 2番目」に処理を施すパターンがまた出てきます。
 
+> [!NOTE]
+> <details>
+> <summary><code>Just (rest, f) -&gt; fmap f &lt;$&gt; runParser po rest</code> でつまずきやすい3つのポイント</summary>
+>
+> ### 1. 構文: 演算子を中置で定義する
+>
+> `pf <*> po = ...`という形で**中置のまま**定義してください。
+> `pf (<*>) po = ...`のように書くと、GHCは「`pf`という名前の関数を、
+> `(<*>)`と`po`という2つの引数で定義しようとしている」と解釈してしまい、
+> `Applicative`の`<*>`メソッドの実装として認識されません
+> (`‘pf’ is not a (visible) method of class ‘Applicative’`というエラーに
+> なります)。
+>
+> ### 2. `f <$> runParser po rest` では足りない(`fmap`を2回重ねる)
+>
+> `runParser po rest :: Maybe (i, a)`です。`f <$> runParser po rest`と
+> 書くと、`Maybe`の`fmap`が`f`を**タプル`(i, a)`全体**に適用しようとして
+> しまいます。しかし`f :: a -> b`はタプルではなく`a`だけを受け取る関数
+> なので、型が合いません(`Couldn't match type ‘b’ with ‘(i, b)’`という
+> エラーになります)。`digit3`のときと同じく、「`Maybe`の中の、タプルの
+> 2番目」という2階層構造なので、`fmap`を**2回重ねる**必要があります。
+>
+> ```haskell
+> Just (rest, f) -> fmap f <$> runParser po rest
+> ```
+>
+> ここで2つの`<$>`/`fmap`は、それぞれ**別のFunctor**です。
+>
+> ```haskell
+> ghci> :type runParser (char 'a') "abc"
+> runParser (char 'a') "abc" :: Maybe (String, Char)
+> ```
+>
+> - 外側の`<$>`(`fmap f <$> ...`の`<$>`) ―― `runParser po rest`が
+>   `Maybe (i, a)`なので、**`Maybe`のFunctor**
+> - 内側の`fmap f` ―― `(i, a) -> (i, b)`という変換なので、**タプルの
+>   Functor**
+> - `Parser`自身のFunctorは、この行の中では**一度も使われません**。
+>   `runParser`で中身を取り出した時点で`Parser`という型はもう無く、
+>   以降は`Maybe`とタプルという標準ライブラリの型だけを扱っています。
+>   `Parser`のFunctorが使われるのは、`Parser $ ...`で包み終えた
+>   **後**、他のコードがこの`Parser`の値に対して`fmap`/`<$>`を
+>   呼んだときだけです。
+>
+> ### 3. `fmap f <$> runParser po rest` は `fmap (fmap f) . runParser po rest` ではない
+>
+> `.`(関数合成)は**2つの関数**を繋げるためのものです。
+>
+> ```haskell
+> (.) :: (b -> c) -> (a -> b) -> a -> c
+> ```
+>
+> `runParser po`(引数無し)は`i -> Maybe (i, a)`という**関数**なので
+> `.`で繋げられますが、`runParser po rest`は**すでに`rest`まで渡して
+> 実行済みの値**(`Maybe (i, a)`)です。関数ではなく値なので`.`の右側には
+> 置けません(`‘runParser’ is applied to too many arguments`という
+> エラーになります)。正しくは`$`か、何もつけない普通の関数適用です。
+>
+> ```haskell
+> fmap (fmap f) $ runParser po rest
+> -- または
+> fmap (fmap f) (runParser po rest)
+> ```
+>
+> `fmap f <$> runParser po rest`は、この`fmap (fmap f) (runParser po rest)`
+> と完全に同じ意味です(`<$>`は中置の`fmap`なので)。
+>
+> </details>
+
 実装できたら `string` を `<$>` と `<*>` を使って書き直します。
 
 ```haskell
@@ -258,6 +327,68 @@ class Functor f => Applicative f where
 必要があります)。`<$>` だけでは「1つの箱」しか扱えませんが、`<*>` を使えば
 いくつでも箱をつなげられます。`(:) <$> char c <*> string cs` のように、
 `<*>` は好きなだけ繋げて書けます(`f <$> a <*> b <*> c <*> ...`)。
+
+> [!NOTE]
+> **`Applicative` の「意味」と、`Parser` での「実装の仕方」を混同しないこと**
+>
+> `pf <*> po = Parser $ \i -> case runParser pf i of ...`という実装を見ると、
+> 「`Applicative`とは、複数の関数を繋げて1つの関数を作ることだ」と思って
+> しまいがちです。しかしこれは**`Parser`の中身がたまたま関数だったから、
+> 実装がそういう形になっただけ**で、`Applicative`という概念自体の意味では
+> ありません。
+>
+> `Applicative`の普遍的な意味は、**「複数引数の関数を、箱に入った引数に
+> 1つずつ適用していく」**ことです。`f`が`Maybe`だろうが`[]`だろうが
+> `Parser`だろうが、この「型の当てはめ方」は完全に共通です。
+>
+> ```haskell
+> ghci> (+) <$> Just 3 <*> Just 5
+> Just 8
+> ghci> (,,) <$> [1,2] <*> ['a','b'] <*> [True,False]
+> [(1,'a',True),(1,'a',False),(1,'b',True),(1,'b',False),(2,'a',True),(2,'a',False),(2,'b',True),(2,'b',False)]
+> ```
+>
+> `Maybe`の`<*>`(`Just f <*> Just x = Just (f x)`)は単純なパターンマッチ
+> だけで、「関数を繋げる」という話は一切出てきません。リストの`<*>`(全部の
+> 組み合わせを作る)も同様です。「関数を繋げる」というのは、`Parser`の中身が
+> 関数だったからこそ必要になった、**`Parser`固有の実装の都合**です。
+>
+> | | |
+> |---|---|
+> | `Applicative`という**概念**(型クラス) | 複数引数の関数を、箱に入った引数に1つずつ適用する(どの型でも共通) |
+> | `Parser`における`<*>`の**実装** | たまたま中身が関数だったので、「2つの関数を繋げて新しい関数を作る」という手段になった |
+>
+> ### 「入力を読み進める」という性質も、同じく`Parser`固有
+>
+> `char c <*> char d`のように`<*>`を繋げていくと、「1つ目が消費した
+> **残りの入力**を2つ目に渡す」ため、結果的に入力を前へ前へと読み進める
+> ことになります。
+>
+> ```haskell
+> ghci> runParser (char 'a') "abcde"
+> Just ("bcde",'a')
+> ghci> runParser ((,) <$> char 'a' <*> char 'b') "abcde"
+> Just ("cde",('a','b'))
+> ghci> runParser ((,,) <$> char 'a' <*> char 'b' <*> char 'c') "abcde"
+> Just ("de",('a','b','c'))
+> ```
+>
+> これも`Applicative`という型クラス自体が保証している性質ではありません。
+> `pf <*> po`の実装で`runParser po rest`(`rest` = `pf`が消費した後の
+> 残り)と書いたから、たまたまそうなっただけです。「効果」の中身は型ごとに
+> 全く違います。
+>
+> | `f` | `<*>`の「効果」の中身 |
+> |---|---|
+> | `Maybe` | 失敗の伝播(`Nothing`ならそれ以上進まない) |
+> | `[]` | 全組み合わせ(直積)を作る |
+> | `Parser` | **入力を、前のパーサが消費した続きから読む** |
+> | `IO` | 実世界で1つ目のアクションを実行してから2つ目を実行する |
+>
+> `Maybe`や`[]`には「入力」「残り」という概念自体がそもそも存在しません。
+> `Applicative`は「2つの効果を順番に組み合わせられる」という**抽象的な
+> 骨組み**だけを提供していて、「効果」が具体的に何を意味するかは、その型
+> ごとに(今回で言えば`Parser`を設計した`docs`側が)決めるものです。
 
 ## 動作確認
 
