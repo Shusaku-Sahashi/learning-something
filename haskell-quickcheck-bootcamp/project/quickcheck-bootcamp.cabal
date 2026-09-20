@@ -1,0 +1,44 @@
+cabal-version:      2.4
+name:               quickcheck-bootcamp
+version:            0.1.0.0
+synopsis:           QuickCheck bootcamp: a small library tested entirely with properties
+description:        Ch9 の題材。ライブラリ本体と、プロパティテスト一式。
+license:            BSD-3-Clause
+author:             learning-something
+maintainer:         example@example.com
+build-type:         Simple
+extra-doc-files:    README.md
+
+common warnings
+    ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns
+
+library
+    import:           warnings
+    exposed-modules:  Bootcamp.Queue
+                    , Bootcamp.Text
+                    , Bootcamp.Interval
+    hs-source-dirs:   src
+    build-depends:    base >=4.14 && <5
+    default-language: Haskell2010
+
+-- exitcode-stdio-1.0:
+--   main-is で指定した実行ファイルを走らせ、終了コード 0 なら成功とみなす。
+--   QuickCheck だけで完結できるので、追加のテストフレームワークが要らない。
+test-suite spec
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          Spec.hs
+    other-modules:    Gen.Queue
+                    , Gen.Interval
+                    , Props.Queue
+                    , Props.Text
+                    , Props.Interval
+                    , Props.Regression
+                    , Runner
+    hs-source-dirs:   test
+    build-depends:    base >=4.14 && <5
+                    , QuickCheck >=2.14 && <2.16
+                    , quickcheck-bootcamp
+    default-language: Haskell2010
+    -- 並列実行やヒープ制限を付けたい場合はここに書く
+    ghc-options:      -rtsopts
